@@ -50,8 +50,10 @@ const AdminPanel = () => {
     const esperaRef = useRef(null)
     const channelRef = useRef(null)
     const velocidadeRef = useRef(velocidade)
+    const duracaoRef = useRef(duracao)
 
     useEffect(() => { velocidadeRef.current = velocidade }, [velocidade])
+    useEffect(() => { duracaoRef.current = duracao }, [duracao])
 
     // --- CARREGAMENTO INICIAL (SYNC) ---
     useEffect(() => {
@@ -138,7 +140,7 @@ const AdminPanel = () => {
         setNomeAtual(nomeSorteado)
         channelRef.current.postMessage({ type: 'UPDATE_NAME', payload: nomeSorteado })
 
-        if (Date.now() - startTime > duracao * 1000) {
+        if (Date.now() - startTime > duracaoRef.current * 1000) {
             finalizarSorteio()
         } else {
             timeoutRef.current = setTimeout(() => loopSorteio(startTime), velocidadeRef.current)
@@ -213,18 +215,22 @@ const AdminPanel = () => {
     const handleDataLoaded = async (novosDados, novosStats) => {
         if (!user) return
 
-        // Prepara dados para insert no Supabase com Email e JSON Completo
+        // 1. LIMPEZA TOTAL (Substituição Solicitada)
+        // O usuário quer que o novo arquivo substitua o anterior, deletando contatos antigos.
+        await supabase.from('app_participantes').delete().eq('user_id', user.id)
+
+        // Prepara dados
         const dadosParaInserir = novosDados.map(p => ({
             user_id: user.id,
             nome: p.nome,
             telefone: p.telefone,
             cpf: p.cpf,
-            email: p.email, // Novo Campo
-            detalhes: p.detalhes, // JSON com tudo
+            email: p.email,
+            detalhes: p.detalhes,
             origem: 'importacao'
         }))
 
-        // Insert em Cloud (Lote)
+        // 2. Insert Novos
         const { data, error } = await supabase.from('app_participantes').insert(dadosParaInserir).select()
 
         if (error) {
@@ -232,22 +238,18 @@ const AdminPanel = () => {
             return
         }
 
-        // Atualiza estado local
-        // Combinamos os existentes + novos retornados do banco (que agora têm ID)
+        // Atualiza estado local (SUBSTITUI TUDO)
         const novosComId = data || []
-
-        // Estratégia simples: Recarrega tudo ou adiciona
-        // Vamos adicionar ao estado local para ser reativo
-        setParticipantes([...participantes, ...novosComId])
+        setParticipantes(novosComId) // Substitui array antigo
 
         setImportStats({
             ...novosStats,
-            totalValido: participantes.length + novosComId.length, // Aproximado
+            totalValido: novosComId.length,
             novosAdicionados: novosComId.length
         })
 
         setShowImportador(false)
-        alert(`${novosComId.length} participantes sincronizados com a nuvem!`)
+        alert(`Lista atualizada! ${novosComId.length} participantes sincronizados.`)
     }
 
     const addBrinde = async () => {
@@ -282,17 +284,26 @@ const AdminPanel = () => {
     }
 
     const limparTudo = async () => {
-        if (confirm("ATENÇÃO: Isso apagará TODO o histórico e participantes DA NUVEM. Dados serão perdidos para sempre em todos os dispositivos. Continuar?")) {
-            // Apaga do Banco
+        if (confirm("ATENÇÃO: Isso apagará TODO o histórico e participantes DA NUVEM. Dados serão perdidos. Continuar?")) {
             await supabase.from('app_participantes').delete().eq('user_id', user.id)
             await supabase.from('app_historico').delete().eq('user_id', user.id)
-
-            // Limpa local
             setParticipantes([])
             setHistorico([])
             setImportStats(null)
             setGanhador(null)
             window.location.reload()
+        }
+    }
+
+    const removerGanhador = async (id, e) => {
+        e.stopPropagation()
+        if (!confirm("Tem certeza que deseja apagar este ganhador do histórico?")) return
+
+        const { error } = await supabase.from('app_historico').delete().eq('id', id)
+        if (!error) {
+            setHistorico(historico.filter(h => h.id !== id))
+        } else {
+            alert("Erro ao remover: " + error.message)
         }
     }
 
@@ -519,10 +530,13 @@ const AdminPanel = () => {
                             <div className="space-y-3">
                                 {historico.length === 0 && <div className="text-center text-gray-600 mt-10">Nenhum ganhador ainda.</div>}
                                 {historico.map((h, i) => (
-                                    <div key={i} onClick={() => abrirDetalhes(h)} className="bg-gradient-to-r from-gray-900 to-gray-800 p-3 rounded-lg border border-gray-700 hover:border-yellow-500/50 cursor-pointer group transition-all">
+                                    <div key={i} onClick={() => abrirDetalhes(h)} className="bg-gradient-to-r from-gray-900 to-gray-800 p-3 rounded-lg border border-gray-700 hover:border-yellow-500/50 cursor-pointer group transition-all relative">
                                         <div className="flex justify-between items-start">
                                             <span className="text-[10px] font-bold text-yellow-600 uppercase bg-yellow-900/10 px-1 rounded">#{historico.length - i}</span>
-                                            <span className="text-[10px] text-gray-500">{new Date(h.data_ganho || h.dataHora).toLocaleTimeString().slice(0, 5)}</span>
+                                            <div className="flex gap-2">
+                                                <span className="text-[10px] text-gray-500">{new Date(h.data_ganho || h.dataHora).toLocaleTimeString().slice(0, 5)}</span>
+                                                <button onClick={(e) => removerGanhador(h.id, e)} className="text-gray-600 hover:text-red-500 p-1 -mt-1 -mr-1 rounded-full hover:bg-red-900/20 z-10" title="Apagar Registro"><Trash2 className="w-4 h-4" /></button>
+                                            </div>
                                         </div>
                                         <p className="font-bold text-white mt-1 group-hover:text-yellow-400 transition-colors">{h.nome}</p>
                                         <p className="text-xs text-purple-400/80 mt-1 flex items-center gap-1 font-medium"><Gift className="w-3 h-3" /> {h.premio || "Prêmio não registrado"}</p>
