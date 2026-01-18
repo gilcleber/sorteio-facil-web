@@ -47,28 +47,16 @@ const ChangePinPage = () => {
         setError('')
 
         try {
-            // 1. Atualiza a senha no Supabase Auth (Fundamental para login funcionar)
-            // Tenta atualizar. Se falhar, dependendo do erro, pode ser que o user não esteja logado no Auth
-            // mas aqui assumimos que estamos num fluxo onde acabamos de logar ou temos sessão.
-            const { error: authError } = await supabase.auth.updateUser({
-                password: newPin
+            // Usa RPC para atualizar senha (auth) e PIN (profile) de forma atômica
+            // Isso evita erro de "senha muito curta" da API do Supabase e garante sincronia
+            const { error } = await supabase.rpc('update_my_pin', {
+                new_pin: newPin
             })
 
-            if (authError) {
-                console.error('Erro ao atualizar senha auth:', authError)
-                throw new Error('Falha técnica ao atualizar senha. Tente novamente.')
+            if (error) {
+                console.error('Erro RPC update_my_pin:', error)
+                throw error
             }
-
-            // 2. Atualiza o PIN e status no banco de dados
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({
-                    pin: newPin,
-                    pin_changed: true
-                })
-                .eq('id', userId)
-
-            if (updateError) throw updateError
 
             setSuccess(true)
 
@@ -79,6 +67,7 @@ const ChangePinPage = () => {
 
         } catch (err) {
             console.error('Erro ao atualizar PIN:', err)
+            // Tenta mostrar mensagem amigável ou o erro real
             setError(err.message || 'Erro ao salvar novo PIN. Tente novamente.')
             setStep(1)
             setNewPin('')
