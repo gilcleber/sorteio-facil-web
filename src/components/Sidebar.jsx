@@ -1,12 +1,38 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
+import { supabase } from '../services/supabaseClient'
 import { Home, Settings, DollarSign, Shield, LogOut, Radio } from 'lucide-react'
 
 const Sidebar = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const { user, signOut } = useAuth()
+    const { theme } = useTheme()
+    const [userSlug, setUserSlug] = useState('')
+
+    useEffect(() => {
+        if (user) {
+            fetchUserSlug()
+        }
+    }, [user])
+
+    const fetchUserSlug = async () => {
+        try {
+            const { data } = await supabase
+                .from('profiles')
+                .select('slug')
+                .eq('id', user.id)
+                .single()
+
+            if (data?.slug) {
+                setUserSlug(data.slug)
+            }
+        } catch (err) {
+            console.error('Erro ao buscar slug:', err)
+        }
+    }
 
     const menuItems = [
         {
@@ -37,7 +63,12 @@ const Sidebar = () => {
 
     const handleLogout = async () => {
         await signOut()
-        navigate('/login')
+        // Redirecionar para login via PIN se tiver slug, senão para login normal
+        if (userSlug) {
+            navigate(`/radio/${userSlug}`)
+        } else {
+            navigate('/login')
+        }
     }
 
     return (
@@ -45,12 +76,19 @@ const Sidebar = () => {
             {/* Logo/Header */}
             <div className="p-6 border-b border-gray-800">
                 <div className="flex items-center gap-3">
-                    <div className="bg-purple-600 p-2 rounded-lg">
-                        <Radio className="w-6 h-6 text-white" />
+                    <div
+                        className="p-2 rounded-lg"
+                        style={{ backgroundColor: theme.primary_color || '#3f197f' }}
+                    >
+                        {theme.logo_url ? (
+                            <img src={theme.logo_url} alt="Logo" className="w-6 h-6 object-contain" />
+                        ) : (
+                            <Radio className="w-6 h-6 text-white" />
+                        )}
                     </div>
                     <div>
                         <h1 className="text-white font-bold text-lg">Sorteio Fácil</h1>
-                        <p className="text-gray-400 text-xs">PRO</p>
+                        <p className="text-gray-400 text-xs">{theme.slogan || 'PRO'}</p>
                     </div>
                 </div>
             </div>
@@ -58,7 +96,10 @@ const Sidebar = () => {
             {/* User Info */}
             <div className="p-4 border-b border-gray-800">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">
+                    <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                        style={{ backgroundColor: theme.primary_color || '#3f197f' }}
+                    >
                         {user?.email?.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -66,7 +107,13 @@ const Sidebar = () => {
                             {user?.email}
                         </p>
                         {user?.isAdmin && (
-                            <span className="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded-full">
+                            <span
+                                className="text-xs px-2 py-0.5 rounded-full"
+                                style={{
+                                    backgroundColor: `${theme.primary_color}33` || '#3f197f33',
+                                    color: theme.primary_color || '#a78bfa'
+                                }}
+                            >
                                 Admin
                             </span>
                         )}
@@ -85,9 +132,13 @@ const Sidebar = () => {
                             key={item.path}
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/50'
+                                    ? 'text-white shadow-lg'
                                     : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                 }`}
+                            style={isActive ? {
+                                backgroundColor: theme.primary_color || '#3f197f',
+                                boxShadow: `0 10px 15px -3px ${theme.primary_color}50` || '0 10px 15px -3px #3f197f50'
+                            } : {}}
                         >
                             <Icon className="w-5 h-5" />
                             <span className="font-medium">{item.name}</span>
