@@ -112,6 +112,8 @@ const ClientSettings = () => {
         setMessage({ type: '', text: '' })
 
         try {
+            console.log('Salvando configurações:', settings)
+
             // Upload da logo se houver arquivo novo
             let logoUrl = settings.logo_url
             if (logoFile) {
@@ -122,23 +124,37 @@ const ClientSettings = () => {
                 }
             }
 
+            const dataToSave = {
+                user_id: user.id,
+                slogan: settings.slogan || '',
+                logo_url: logoUrl || null,
+                primary_color: settings.primary_color || '#3f197f',
+                secondary_color: settings.secondary_color || '#ffffff'
+            }
+
+            console.log('Dados a salvar:', dataToSave)
+
             // Salvar configurações usando upsert com onConflict
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('radio_settings')
-                .upsert({
-                    user_id: user.id,
-                    slogan: settings.slogan,
-                    logo_url: logoUrl || null,
-                    primary_color: settings.primary_color,
-                    secondary_color: settings.secondary_color
-                }, {
-                    onConflict: 'user_id' // Especifica qual coluna usar para detectar conflito
+                .upsert(dataToSave, {
+                    onConflict: 'user_id'
                 })
+                .select()
 
-            if (error) throw error
+            if (error) {
+                console.error('Erro do Supabase:', error)
+                throw error
+            }
 
-            setSettings({ ...settings, logo_url: logoUrl })
+            console.log('Dados salvos:', data)
+
+            // Atualizar estado local com os dados salvos
+            const savedData = data && data.length > 0 ? data[0] : dataToSave
+            setSettings(savedData)
+            setLogoPreview(savedData.logo_url || '')
             setLogoFile(null)
+
             setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' })
 
             // Limpar mensagem após 3 segundos
