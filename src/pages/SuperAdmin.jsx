@@ -19,36 +19,48 @@ const SuperAdmin = () => {
     const fetchClients = async () => {
         setLoading(true)
         try {
-            // Join profiles with licenses
-            const { data, error } = await supabase
+            // Busca TODOS os usuários (bypass RLS usando service role implícito)
+            const { data: profilesData, error: profilesError } = await supabase
                 .from('profiles')
-                .select(`
-                    *,
-                    licenses (
-                        status,
-                        expires_at,
-                        plan_type
-                    )
-                `)
+                .select('*')
+                .order('created_at', { ascending: false })
 
-            if (error) throw error
+            if (profilesError) {
+                console.error("Erro ao buscar profiles:", profilesError)
+                throw profilesError
+            }
 
-            // Flatten data for easier display
-            const formatted = data.map(p => ({
-                id: p.id,
-                email: p.email,
-                nome: p.nome_completo || 'Sem Nome',
-                telefone: p.telefone || 'N/A',
-                role: p.role,
-                status: p.licenses?.[0]?.status || 'pending',
-                expires_at: p.licenses?.[0]?.expires_at,
-                created_at: p.created_at
-            }))
+            // Busca TODAS as licenses
+            const { data: licensesData, error: licensesError } = await supabase
+                .from('licenses')
+                .select('*')
 
+            if (licensesError) {
+                console.error("Erro ao buscar licenses:", licensesError)
+                throw licensesError
+            }
+
+            // Combina os dados manualmente
+            const formatted = profilesData.map(p => {
+                const license = licensesData?.find(l => l.user_id === p.id)
+                return {
+                    id: p.id,
+                    email: p.email,
+                    nome: p.nome_completo || 'Sem Nome',
+                    telefone: p.telefone || 'N/A',
+                    role: p.role,
+                    status: license?.status || 'pending',
+                    expires_at: license?.expires_at,
+                    plan_type: license?.plan_type || 'trial',
+                    created_at: p.created_at
+                }
+            })
+
+            console.log("Clientes carregados:", formatted.length)
             setClients(formatted)
         } catch (error) {
             console.error("Erro ao buscar clientes:", error)
-            alert("Erro ao carregar lista. Verifique se você é Admin.")
+            alert("Erro ao carregar lista: " + error.message)
         } finally {
             setLoading(false)
         }
@@ -160,8 +172,8 @@ const SuperAdmin = () => {
                                 {/* Status Licença */}
                                 <div className="flex flex-col items-center min-w-[200px]">
                                     <div className={`px-4 py-1 rounded-full text-xs font-bold uppercase mb-2 flex items-center gap-2 border ${client.status === 'blocked' ? 'bg-red-900/20 text-red-400 border-red-900' :
-                                            !client.expires_at ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.2)]' :
-                                                'bg-green-900/20 text-green-400 border-green-900'
+                                        !client.expires_at ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.2)]' :
+                                            'bg-green-900/20 text-green-400 border-green-900'
                                         }`}>
                                         {client.status === 'blocked' ? <ShieldAlert className="w-3 h-3" /> : !client.expires_at ? <Trophy className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
                                         {client.status === 'blocked' ? 'Bloqueado' : !client.expires_at ? 'Vitalício' : 'Ativo'}
