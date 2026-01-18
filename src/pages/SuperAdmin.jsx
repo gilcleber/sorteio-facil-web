@@ -1,190 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom' // Ensure this import is present
+import { useNavigate } from 'react-router-dom'
 import { Users, Search, CheckCircle, XCircle, Clock, ShieldAlert, ArrowLeft, RefreshCw, Calendar, Loader2 } from 'lucide-react'
 
 const SuperAdmin = () => {
-    const { user } = useAuth() // This relies on AuthContext being correctly set up
+    const { user } = useAuth()
     const navigate = useNavigate()
     const [clients, setClients] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [processing, setProcessing] = useState(null)
 
-    useEffect(() => {
-        fetchClients()
-    }, [])
-
-    const fetchClients = async () => {
-        setLoading(true)
-        try {
-            // Busca TODOS os usuários (bypass RLS usando service role implícito)
-            const { data: profilesData, error: profilesError } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('created_at', { ascending: false })
-
-            if (profilesError) {
-                console.error("Erro ao buscar profiles:", profilesError)
-                throw profilesError
-            }
-
-            // Busca TODAS as licenses
-            const { data: licensesData, error: licensesError } = await supabase
-                .from('licenses')
-                .select('*')
-
-            if (licensesError) {
-                console.error("Erro ao buscar licenses:", licensesError)
-                throw licensesError
-            }
-
-            // Combina os dados manualmente
-            const formatted = profilesData.map(p => {
-                const license = licensesData?.find(l => l.user_id === p.id)
-                return {
-                    id: p.id,
-                    email: p.email,
-                    nome: p.nome_completo || 'Sem Nome',
-                    telefone: p.telefone || 'N/A',
-                    role: p.role,
-                    slug: p.slug,
-                    pin: p.pin,
-                    status: license?.status || 'pending',
-                    expires_at: license?.expires_at,
-                    plan_type: license?.plan_type || 'trial',
-                    created_at: p.created_at
-                }
-            })
-
-            console.log("Clientes carregados:", formatted.length)
-            setClients(formatted)
-        } catch (error) {
-            console.error("Erro ao buscar clientes:", error)
-            alert("Erro ao carregar lista: " + error.message)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const updateName = async (userId, newName) => {
-        // Atualização otimista
-        setClients(prev => prev.map(c => c.id === userId ? { ...c, nome: newName } : c))
-
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ nome_completo: newName })
-                .eq('id', userId)
-
-            if (error) throw error
-            // Sucesso silencioso ou toast
-        } catch (error) {
-            alert('Erro ao atualizar nome: ' + error.message)
-            fetchClients() // Reverte em caso de erro
-        }
-    }
-
-    const updateSlug = async (userId, newSlug) => {
-        // Verifica se slug já existe
-        const { data: existing } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('slug', newSlug)
-            .neq('id', userId) // Exclui o próprio usuário
-            .maybeSingle()
-
-        if (existing) {
-            alert('Este slug já está em uso! Escolha outro.')
-            fetchClients() // Reverte para o original no input
-            return
-        }
-
-        // Atualização Otimista
-        setClients(prev => prev.map(c => c.id === userId ? { ...c, slug: newSlug } : c))
-
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ slug: newSlug })
-                .eq('id', userId)
-
-            if (error) throw error
-            alert('Link personalizado atualizado!')
-        } catch (error) {
-            alert('Erro ao atualizar slug: ' + error.message)
-            fetchClients()
-        }
-    }
-
-
-
-    const updateLicense = async (userId, customDate = null, status = 'active', planType = null) => {
-        setProcessing(userId)
-        try {
-            let expiresAt = null
-            let finalPlanType = planType
-
-            // Se uma data foi fornecida
-            if (customDate) {
-                const d = new Date(customDate)
-                d.setHours(23, 59, 59, 999) // Fim do dia
-                expiresAt = d.toISOString()
-                finalPlanType = 'pro_mensal'
-            } else if (planType === 'pro_vitalicio') {
-                expiresAt = null // Vitalício
-                finalPlanType = 'pro_vitalicio'
-            } else if (status === 'blocked' || status === 'active') {
-                // Mudança apenas de status, manter a data atual ou null se vitalício
-                // Precisamos buscar a licença atual para não perder a data? 
-                // Ou confiamos no que temos no front? Vamos confiar no front.
-                const currentClient = clients.find(c => c.id === userId)
-                expiresAt = currentClient.expires_at // Mantém a data atual
-                finalPlanType = currentClient.plan_type
-            }
-
-            // Atualização Otimista
-            setClients(prev => prev.map(c => c.id === userId ? {
-                ...c,
-                status,
-                expires_at: expiresAt,
-                plan_type: finalPlanType
-            } : c))
-
-            // Upsert na licença (Garante que exista)
-            const { error } = await supabase
-                .from('licenses')
-                .upsert({
-                    user_id: userId,
-                    status: status,
-                    expires_at: expiresAt,
-                    plan_type: finalPlanType
-                }, { onConflict: 'user_id' })
-
-            if (error) throw error
-
-            alert(`Licença atualizada!`)
-
-        } catch (error) {
-            alert("Erro ao atualizar: " + error.message)
-            fetchClients() // Reverte
-        } finally {
-            setProcessing(null)
-        }
-    }
-
-    const filteredClients = clients.filter(c =>
-        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
-    return (
+    // Estados para criação de rádio
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [newRadio, setNewRadio] = useState({ email: '', nome: '', slug: '', password: '' })
     const [creating, setCreating] = useState(false)
 
-    // Função para gerar senha/pin aleatório de 4 números
+    useEffect(() => {
+        fetchClients()
+    }, [])
+
     const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString()
 
     const openCreateModal = () => {
@@ -220,12 +56,131 @@ const SuperAdmin = () => {
         }
     }
 
-    // Gerador de slug automático ao digitar nome
     const handleNameChange = (e) => {
         const val = e.target.value
         const slugAuto = val.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
         setNewRadio(prev => ({ ...prev, nome: val, slug: slugAuto }))
     }
+
+    const fetchClients = async () => {
+        setLoading(true)
+        try {
+            const { data: profilesData, error: profilesError } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false })
+
+            if (profilesError) throw profilesError
+
+            const { data: licensesData, error: licensesError } = await supabase
+                .from('licenses')
+                .select('*')
+
+            if (licensesError) throw licensesError
+
+            const formatted = profilesData.map(p => {
+                const license = licensesData?.find(l => l.user_id === p.id)
+                return {
+                    id: p.id,
+                    email: p.email,
+                    nome: p.nome_completo || 'Sem Nome',
+                    telefone: p.telefone || 'N/A',
+                    role: p.role,
+                    slug: p.slug,
+                    pin: p.pin,
+                    status: license?.status || 'pending',
+                    expires_at: license?.expires_at,
+                    plan_type: license?.plan_type || 'trial',
+                    created_at: p.created_at
+                }
+            })
+
+            setClients(formatted)
+        } catch (error) {
+            console.error("Erro ao buscar clientes:", error)
+            alert("Erro ao carregar lista: " + error.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const updateName = async (userId, newName) => {
+        setClients(prev => prev.map(c => c.id === userId ? { ...c, nome: newName } : c))
+        try {
+            const { error } = await supabase.from('profiles').update({ nome_completo: newName }).eq('id', userId)
+            if (error) throw error
+        } catch (error) {
+            alert('Erro ao atualizar nome: ' + error.message)
+            fetchClients()
+        }
+    }
+
+    const updateSlug = async (userId, newSlug) => {
+        const { data: existing } = await supabase.from('profiles').select('id').eq('slug', newSlug).neq('id', userId).maybeSingle()
+        if (existing) {
+            alert('Este slug já está em uso! Escolha outro.')
+            fetchClients()
+            return
+        }
+        setClients(prev => prev.map(c => c.id === userId ? { ...c, slug: newSlug } : c))
+        try {
+            const { error } = await supabase.from('profiles').update({ slug: newSlug }).eq('id', userId)
+            if (error) throw error
+            alert('Link personalizado atualizado!')
+        } catch (error) {
+            alert('Erro ao atualizar slug: ' + error.message)
+            fetchClients()
+        }
+    }
+
+    const updateLicense = async (userId, customDate = null, status = 'active', planType = null) => {
+        setProcessing(userId)
+        try {
+            let expiresAt = null
+            let finalPlanType = planType
+
+            if (customDate) {
+                const d = new Date(customDate)
+                d.setHours(23, 59, 59, 999)
+                expiresAt = d.toISOString()
+                finalPlanType = 'pro_mensal'
+            } else if (planType === 'pro_vitalicio') {
+                expiresAt = null
+                finalPlanType = 'pro_vitalicio'
+            } else if (status === 'blocked' || status === 'active') {
+                const currentClient = clients.find(c => c.id === userId)
+                expiresAt = currentClient.expires_at
+                finalPlanType = currentClient.plan_type
+            }
+
+            setClients(prev => prev.map(c => c.id === userId ? {
+                ...c,
+                status,
+                expires_at: expiresAt,
+                plan_type: finalPlanType
+            } : c))
+
+            const { error } = await supabase.from('licenses').upsert({
+                user_id: userId,
+                status: status,
+                expires_at: expiresAt,
+                plan_type: finalPlanType
+            }, { onConflict: 'user_id' })
+
+            if (error) throw error
+            alert(`Licença atualizada!`)
+        } catch (error) {
+            alert("Erro ao atualizar: " + error.message)
+            fetchClients()
+        } finally {
+            setProcessing(null)
+        }
+    }
+
+    const filteredClients = clients.filter(c =>
+        c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
         <div className="min-h-screen bg-gray-950 text-white p-6 font-sans">
