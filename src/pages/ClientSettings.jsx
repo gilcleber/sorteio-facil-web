@@ -115,7 +115,11 @@ const ClientSettings = () => {
             // Upload da logo se houver arquivo novo
             let logoUrl = settings.logo_url
             if (logoFile) {
-                logoUrl = await uploadLogo()
+                const uploadedUrl = await uploadLogo()
+                // Se upload falhar, continua sem logo
+                if (uploadedUrl && uploadedUrl !== settings.logo_url) {
+                    logoUrl = uploadedUrl
+                }
             }
 
             // Salvar configurações
@@ -124,7 +128,7 @@ const ClientSettings = () => {
                 .upsert({
                     user_id: user.id,
                     slogan: settings.slogan,
-                    logo_url: logoUrl,
+                    logo_url: logoUrl || null,
                     primary_color: settings.primary_color,
                     secondary_color: settings.secondary_color
                 })
@@ -140,7 +144,7 @@ const ClientSettings = () => {
 
         } catch (err) {
             console.error('Erro ao salvar:', err)
-            setMessage({ type: 'error', text: 'Erro ao salvar configurações' })
+            setMessage({ type: 'error', text: `Erro ao salvar: ${err.message}` })
         } finally {
             setSaving(false)
         }
@@ -166,8 +170,8 @@ const ClientSettings = () => {
                 {/* Mensagem de Feedback */}
                 {message.text && (
                     <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${message.type === 'success'
-                            ? 'bg-green-900/20 border-green-500/50 text-green-400'
-                            : 'bg-red-900/20 border-red-500/50 text-red-400'
+                        ? 'bg-green-900/20 border-green-500/50 text-green-400'
+                        : 'bg-red-900/20 border-red-500/50 text-red-400'
                         }`}>
                         {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                         <span>{message.text}</span>

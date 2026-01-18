@@ -49,6 +49,8 @@ const SuperAdmin = () => {
                     nome: p.nome_completo || 'Sem Nome',
                     telefone: p.telefone || 'N/A',
                     role: p.role,
+                    slug: p.slug,
+                    pin: p.pin,
                     status: license?.status || 'pending',
                     expires_at: license?.expires_at,
                     plan_type: license?.plan_type || 'trial',
@@ -166,21 +168,42 @@ const SuperAdmin = () => {
                                         <p className="text-gray-400 text-sm">{client.email}</p>
                                         <p className="text-gray-500 text-xs mt-1 flex items-center gap-1"><Users className="w-3 h-3" /> {client.telefone}</p>
                                         {client.slug && (
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <code className="text-xs bg-gray-800 px-2 py-1 rounded text-purple-400">
-                                                    {window.location.origin}/#/radio/{client.slug}
-                                                </code>
-                                                <button
-                                                    onClick={() => {
-                                                        const link = `${window.location.origin}/#/radio/${client.slug}`
-                                                        navigator.clipboard.writeText(link)
-                                                        alert('Link copiado!')
-                                                    }}
-                                                    className="text-xs bg-purple-600 hover:bg-purple-500 px-2 py-1 rounded"
-                                                    title="Copiar link de acesso"
-                                                >
-                                                    Copiar Link
-                                                </button>
+                                            <div className="mt-2 space-y-2">
+                                                {/* Link de Acesso */}
+                                                <div className="flex items-center gap-2">
+                                                    <code className="text-xs bg-gray-800 px-2 py-1 rounded text-purple-400">
+                                                        {window.location.origin}/#/radio/{client.slug}
+                                                    </code>
+                                                    <button
+                                                        onClick={() => {
+                                                            const link = `${window.location.origin}/#/radio/${client.slug}`
+                                                            navigator.clipboard.writeText(link)
+                                                            alert('Link copiado!')
+                                                        }}
+                                                        className="text-xs bg-purple-600 hover:bg-purple-500 px-2 py-1 rounded"
+                                                        title="Copiar link de acesso"
+                                                    >
+                                                        Copiar Link
+                                                    </button>
+                                                </div>
+                                                {/* PIN de Acesso */}
+                                                {client.pin && (
+                                                    <div className="flex items-center gap-2">
+                                                        <code className="text-xs bg-yellow-900/20 border border-yellow-600/50 px-2 py-1 rounded text-yellow-400 font-mono">
+                                                            PIN: {client.pin}
+                                                        </code>
+                                                        <button
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(client.pin)
+                                                                alert('PIN copiado!')
+                                                            }}
+                                                            className="text-xs bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded text-white"
+                                                            title="Copiar PIN"
+                                                        >
+                                                            Copiar PIN
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
