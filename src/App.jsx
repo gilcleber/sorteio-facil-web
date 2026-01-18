@@ -7,6 +7,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import PrivateRoute from './components/PrivateRoute'
 import SuperAdmin from './pages/SuperAdmin'
+import RadioLogin from './pages/RadioLogin'
+import ChangePinPage from './pages/ChangePinPage'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -54,6 +56,8 @@ function App() {
             <Route path="/telao" element={<PublicDisplay />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/radio/:slug" element={<RadioLogin />} />
+            <Route path="/trocar-pin" element={<ChangePinPage />} />
 
             {/* Rotas Protegidas (Logado) */}
             <Route

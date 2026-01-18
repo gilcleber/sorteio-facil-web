@@ -1,0 +1,195 @@
+import React, { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { supabase } from '../services/supabaseClient'
+import PinInput from '../components/PinInput'
+import { Lock, Radio, AlertCircle, Loader2 } from 'lucide-react'
+
+const RadioLogin = () => {
+    const { slug } = useParams()
+    const navigate = useNavigate()
+
+    const [pin, setPin] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [radioData, setRadioData] = useState(null)
+    const [error, setError] = useState('')
+    const [loadingRadio, setLoadingRadio] = useState(true)
+
+    useEffect(() => {
+        fetchRadioData()
+    }, [slug])
+
+    const fetchRadioData = async () => {
+        setLoadingRadio(true)
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, nome_completo, slug, email')
+                .eq('slug', slug)
+                .single()
+
+            if (error || !data) {
+                setError('Rádio não encontrada. Verifique o link.')
+                return
+            }
+
+            setRadioData(data)
+        } catch (err) {
+            setError('Erro ao carregar dados da rádio.')
+        } finally {
+            setLoadingRadio(false)
+        }
+    }
+
+    const handleLogin = async () => {
+        if (pin.length !== 4) {
+            setError('Digite o PIN completo (4 dígitos)')
+            return
+        }
+
+        setLoading(true)
+        setError('')
+
+        try {
+            // Busca usuário pelo slug e PIN
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*, licenses(*)')
+                .eq('slug', slug)
+                .eq('pin', pin)
+                .single()
+
+            if (profileError || !profile) {
+                setError('PIN incorreto. Tente novamente.')
+                setLoading(false)
+                return
+            }
+
+            // Verifica se a licença está ativa
+            const license = profile.licenses?.[0]
+            if (!license || license.status !== 'active') {
+                setError('Acesso bloqueado. Entre em contato com o administrador.')
+                setLoading(false)
+                return
+            }
+
+            // Verifica se expirou
+            if (license.expires_at) {
+                const now = new Date()
+                const expiry = new Date(license.expires_at)
+                if (now > expiry) {
+                    setError('Sua licença expirou. Entre em contato para renovar.')
+                    setLoading(false)
+                    return
+                }
+            }
+
+            // Login via Supabase Auth usando o email
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: profile.email,
+                password: pin // Usando PIN como senha temporária
+            })
+
+            if (authError) {
+                // Se falhar, tenta criar sessão manualmente (workaround)
+                console.error('Erro de autenticação:', authError)
+                setError('Erro ao fazer login. Tente novamente.')
+                setLoading(false)
+                return
+            }
+
+            // Se PIN não foi alterado, redireciona para modal de troca
+            if (!profile.pin_changed) {
+                navigate('/trocar-pin', { state: { userId: profile.id, firstLogin: true } })
+            } else {
+                navigate('/')
+            }
+
+        } catch (err) {
+            console.error('Erro no login:', err)
+            setError('Erro inesperado. Tente novamente.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        if (pin.length === 4) {
+            handleLogin()
+        }
+    }, [pin])
+
+    if (loadingRadio) {
+        return (
+            <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+            </div>
+        )
+    }
+
+    if (error && !radioData) {
+        return (
+            <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+                <div className="bg-gray-900 rounded-2xl border border-red-500/50 p-8 max-w-md w-full text-center">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold text-white mb-2">Ops!</h1>
+                    <p className="text-gray-400">{error}</p>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+            <div className="bg-gray-900 rounded-3xl border border-gray-800 shadow-2xl p-8 max-w-md w-full">
+
+                {/* Logo/Ícone da Rádio */}
+                <div className="flex justify-center mb-6">
+                    <div className="bg-purple-600/20 p-4 rounded-full">
+                        <Radio className="w-12 h-12 text-purple-400" />
+                    </div>
+                </div>
+
+                {/* Nome da Rádio */}
+                <h1 className="text-2xl font-bold text-white text-center mb-2">
+                    {radioData?.nome_completo || 'Rádio'}
+                </h1>
+                <p className="text-gray-500 text-center mb-8 text-sm">
+                    Digite seu PIN de acesso
+                </p>
+
+                {/* Input de PIN */}
+                <div className="mb-6">
+                    <PinInput
+                        value={pin}
+                        onChange={setPin}
+                        disabled={loading}
+                    />
+                </div>
+
+                {/* Mensagem de Erro */}
+                {error && radioData && (
+                    <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-3 mb-4 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                        <p className="text-red-400 text-sm">{error}</p>
+                    </div>
+                )}
+
+                {/* Loading */}
+                {loading && (
+                    <div className="flex items-center justify-center gap-2 text-purple-400">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-sm">Verificando...</span>
+                    </div>
+                )}
+
+                {/* Ícone de Segurança */}
+                <div className="mt-8 flex items-center justify-center gap-2 text-gray-600 text-xs">
+                    <Lock className="w-3 h-3" />
+                    <span>Acesso seguro e criptografado</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default RadioLogin
