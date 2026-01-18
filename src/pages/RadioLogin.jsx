@@ -127,18 +127,36 @@ const RadioLogin = () => {
                 return
             }
 
-            // Se PIN não foi alterado, redireciona para modal de troca com dados da rádio
+            // Se PIN não foi alterado e não é admin, força troca
+            // Mas se for admin ou user normal com pin já alterado, vai pro dashboard
             if (!profile.pin_changed) {
                 navigate('/trocar-pin', {
                     state: {
                         userId: profile.id,
                         firstLogin: true,
-                        radioName: radioData?.nome_completo, // Mantém o nome
-                        radioSlug: slug // Mantém o slug para redirection se precisar
+                        radioName: radioData?.nome_completo,
+                        radioSlug: slug
                     }
                 })
             } else {
-                navigate('/')
+                // CORREÇÃO DE RACE CONDITION (LOOP):
+                // Aguarda um pequeno delay para garantir que o AuthProvider 
+                // recebeu o evento onAuthStateChange e atualizou o contexto.
+                // Sem isso, o PrivateRoute pode rodar antes do context ter o user, jogando de volta pro Login.
+                setLoading(true)
+
+                // Pequena espera de segurança
+                await new Promise(resolve => setTimeout(resolve, 500))
+
+                // Verifica se a sessão está realmente ativa no client antes de ir
+                const { data: { session: activeSession } } = await supabase.auth.getSession()
+
+                if (activeSession) {
+                    navigate('/')
+                } else {
+                    console.error("Sessão não detectada após login. Tentando novamente...")
+                    handleLogin() // Tenta recursivamente ou mostra erro
+                }
             }
 
         } catch (err) {
