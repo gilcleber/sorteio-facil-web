@@ -62,11 +62,25 @@ const Sidebar = () => {
     ]
 
     const handleLogout = async () => {
-        await signOut()
-        // Redirecionar para login via PIN se tiver slug, senão para login normal
-        if (userSlug) {
-            navigate(`/radio/${userSlug}`)
-        } else {
+        try {
+            // Buscar slug do usuário antes de fazer logout
+            const { data } = await supabase
+                .from('profiles')
+                .select('slug')
+                .eq('id', user.id)
+                .single()
+
+            await signOut()
+
+            // Redirecionar para login via PIN se tiver slug, senão para login normal
+            if (data?.slug) {
+                navigate(`/radio/${data.slug}`)
+            } else {
+                navigate('/login')
+            }
+        } catch (err) {
+            console.error('Erro ao fazer logout:', err)
+            await signOut()
             navigate('/login')
         }
     }
@@ -132,8 +146,8 @@ const Sidebar = () => {
                             key={item.path}
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                                    ? 'text-white shadow-lg'
-                                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                ? 'text-white shadow-lg'
+                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                 }`}
                             style={isActive ? {
                                 backgroundColor: theme.primary_color || '#3f197f',
