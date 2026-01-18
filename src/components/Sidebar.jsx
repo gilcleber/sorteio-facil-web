@@ -35,7 +35,32 @@ const Sidebar = () => {
         }
     }
 
-    // ... menuItems code ...
+    const menuItems = [
+        {
+            name: 'Sorteios',
+            icon: Home,
+            path: '/',
+            show: true
+        },
+        {
+            name: 'Configurações',
+            icon: Settings,
+            path: '/configuracoes',
+            show: true
+        },
+        {
+            name: 'Financeiro',
+            icon: DollarSign,
+            path: '/financeiro',
+            show: user?.isAdmin
+        },
+        {
+            name: 'Super Admin',
+            icon: Shield,
+            path: '/super-admin',
+            show: user?.isAdmin
+        }
+    ]
 
     const handleLogout = async () => {
         try {
