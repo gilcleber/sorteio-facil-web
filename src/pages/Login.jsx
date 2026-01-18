@@ -96,11 +96,29 @@ const Login = () => {
                 </form>
 
                 <div className="mt-8 text-center border-t border-gray-800 pt-6">
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 text-sm mb-4">
+                        É uma Rádio Parceira?
+                    </p>
+                    <button
+                        onClick={() => {
+                            // Tenta recuperar slug salvo ou pede para digitar
+                            const savedSlug = localStorage.getItem('radioSlug')
+                            if (savedSlug) {
+                                window.location.href = `#/radio/${savedSlug}`
+                            } else {
+                                const slug = prompt("Digite o nome do seu link (ex: rbcampinas):")
+                                if (slug) window.location.href = `#/radio/${slug}`
+                            }
+                        }}
+                        className="w-full bg-gray-800 hover:bg-gray-700 text-purple-400 font-bold py-3 rounded-xl border border-dashed border-gray-700 hover:border-purple-500 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Lock className="w-4 h-4" /> Entrar com PIN de Acesso
+                    </button>
+
+                    <p className="text-gray-500 text-sm mt-6">
                         Ainda não tem conta? <Link to="/register" className="text-purple-400 hover:text-white font-bold transition-colors">Criar agora</Link>
                     </p>
                 </div>
-
             </div>
         </div>
     )
