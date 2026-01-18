@@ -3,12 +3,14 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom'
 import AdminPanel from './components/AdminPanel'
 import PublicDisplay from './components/PublicDisplay'
 import { AuthProvider } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import PrivateRoute from './components/PrivateRoute'
 import SuperAdmin from './pages/SuperAdmin'
 import RadioLogin from './pages/RadioLogin'
 import ChangePinPage from './pages/ChangePinPage'
+import ClientSettings from './pages/ClientSettings'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -50,34 +52,44 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Rotas Públicas */}
-            <Route path="/telao" element={<PublicDisplay />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/radio/:slug" element={<RadioLogin />} />
-            <Route path="/trocar-pin" element={<ChangePinPage />} />
+        <ThemeProvider>
+          <Router>
+            <Routes>
+              {/* Rotas Públicas */}
+              <Route path="/telao" element={<PublicDisplay />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/radio/:slug" element={<RadioLogin />} />
+              <Route path="/trocar-pin" element={<ChangePinPage />} />
 
-            {/* Rotas Protegidas (Logado) */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <AdminPanel />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/super-admin"
-              element={
-                <PrivateRoute>
-                  <SuperAdmin />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Router>
+              {/* Rotas Protegidas (Logado) */}
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <AdminPanel />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/super-admin"
+                element={
+                  <PrivateRoute>
+                    <SuperAdmin />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/configuracoes"
+                element={
+                  <PrivateRoute>
+                    <ClientSettings />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </Router>
+        </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   )
