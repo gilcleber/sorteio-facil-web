@@ -118,40 +118,7 @@ const SuperAdmin = () => {
         }
     }
 
-    const updateSlug = async (userId, newSlug) => {
-        // Verifica validação básica
-        if (!newSlug || newSlug.length < 3) return
 
-        // Verifica se slug já existe
-        const { data: existing } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('slug', newSlug)
-            .neq('id', userId)
-            .maybeSingle()
-
-        if (existing) {
-            alert('Este slug já está em uso! Escolha outro.')
-            fetchClients() // Reverte
-            return
-        }
-
-        // Atualização Otimista
-        setClients(prev => prev.map(c => c.id === userId ? { ...c, slug: newSlug } : c))
-
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ slug: newSlug })
-                .eq('id', userId)
-
-            if (error) throw error
-            // Sucesso silencioso
-        } catch (error) {
-            alert('Erro ao atualizar slug: ' + error.message)
-            fetchClients()
-        }
-    }
 
     const updateLicense = async (userId, customDate = null, status = 'active', planType = null) => {
         setProcessing(userId)
