@@ -68,23 +68,43 @@ const SuperAdmin = () => {
         }
     }
 
-    const updateLicense = async (userId, customDate = null, status = 'active', planType = 'pro_mensal') => {
+    const updateName = async (userId, newName) => {
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ nome_completo: newName })
+                .eq('id', userId)
+
+            if (error) throw error
+
+            await fetchClients()
+            alert('Nome atualizado!')
+        } catch (error) {
+            alert('Erro ao atualizar nome: ' + error.message)
+        }
+    }
+
+    const updateLicense = async (userId, customDate = null, status = 'active', planType = null) => {
         setProcessing(userId)
         try {
             let expiresAt = null
+            let finalPlanType = planType
 
-            if (planType === 'pro_vitalicio') {
-                expiresAt = null // Vitalício não expira
-            } else if (customDate) {
-                // Ajusta para o final do dia selecionado
+            // Se uma data foi fornecida, SEMPRE muda para pro_mensal (não vitalício)
+            if (customDate) {
                 const d = new Date(customDate)
                 d.setHours(23, 59, 59, 999)
                 expiresAt = d.toISOString()
+                finalPlanType = 'pro_mensal' // Força mudança de vitalício para mensal
+            } else if (planType === 'pro_vitalicio') {
+                expiresAt = null // Vitalício não expira
+                finalPlanType = 'pro_vitalicio'
             } else {
                 // Fallback (caso precise)
                 const d = new Date()
                 d.setDate(d.getDate() + 30)
                 expiresAt = d.toISOString()
+                finalPlanType = finalPlanType || 'pro_mensal'
             }
 
             const { error } = await supabase
@@ -92,7 +112,7 @@ const SuperAdmin = () => {
                 .update({
                     status: status,
                     expires_at: expiresAt,
-                    plan_type: planType
+                    plan_type: finalPlanType
                 })
                 .eq('user_id', userId)
 
@@ -161,10 +181,25 @@ const SuperAdmin = () => {
                                         {client.nome ? client.nome.charAt(0).toUpperCase() : '?'}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-lg text-white flex items-center gap-2">
-                                            {client.nome}
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <input
+                                                type="text"
+                                                defaultValue={client.nome}
+                                                onBlur={(e) => {
+                                                    if (e.target.value !== client.nome && e.target.value.trim()) {
+                                                        updateName(client.id, e.target.value)
+                                                    }
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.target.blur()
+                                                    }
+                                                }}
+                                                className="font-bold text-lg text-white bg-transparent border-b border-transparent hover:border-gray-600 focus:border-purple-500 focus:outline-none px-1 -mx-1"
+                                                placeholder="Nome da rádio"
+                                            />
                                             {client.role === 'admin' && <span className="text-[10px] bg-purple-900/50 text-purple-300 px-2 rounded-full border border-purple-500/50">ADMIN</span>}
-                                        </h3>
+                                        </div>
                                         <p className="text-gray-400 text-sm">{client.email}</p>
                                         <p className="text-gray-500 text-xs mt-1 flex items-center gap-1"><Users className="w-3 h-3" /> {client.telefone}</p>
                                         {client.slug && (
