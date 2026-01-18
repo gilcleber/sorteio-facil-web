@@ -122,7 +122,7 @@ const ClientSettings = () => {
                 }
             }
 
-            // Salvar configurações
+            // Salvar configurações usando upsert com onConflict
             const { error } = await supabase
                 .from('radio_settings')
                 .upsert({
@@ -131,6 +131,8 @@ const ClientSettings = () => {
                     logo_url: logoUrl || null,
                     primary_color: settings.primary_color,
                     secondary_color: settings.secondary_color
+                }, {
+                    onConflict: 'user_id' // Especifica qual coluna usar para detectar conflito
                 })
 
             if (error) throw error
