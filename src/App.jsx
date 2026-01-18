@@ -11,6 +11,7 @@ import SuperAdmin from './pages/SuperAdmin'
 import RadioLogin from './pages/RadioLogin'
 import ChangePinPage from './pages/ChangePinPage'
 import ClientSettings from './pages/ClientSettings'
+import FinancePanel from './pages/FinancePanel'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -84,6 +85,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <ClientSettings />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/financeiro"
+                element={
+                  <PrivateRoute>
+                    <FinancePanel />
                   </PrivateRoute>
                 }
               />
