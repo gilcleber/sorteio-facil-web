@@ -58,12 +58,25 @@ const ChangePinPage = () => {
                 throw error
             }
 
+            // RE-AUTENTICAÇÃO AUTOMÁTICA
+            // Atualiza a sessão local com a nova senha (PIN) para evitar desconexão
+            const { error: loginError } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: newPin
+            })
+
+            if (loginError) {
+                console.warn("Aviso: Re-login automático falhou, usuário pode ser redirecionado para login.", loginError)
+            } else {
+                console.log("Sessão atualizada com novo PIN com sucesso.")
+            }
+
             setSuccess(true)
 
-            // Redireciona após 2 segundos
+            // Redireciona
             setTimeout(() => {
                 navigate('/')
-            }, 2000)
+            }, 1500)
 
         } catch (err) {
             console.error('Erro ao atualizar PIN:', err)
