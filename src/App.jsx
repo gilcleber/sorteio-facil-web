@@ -12,6 +12,7 @@ import RadioLogin from './pages/RadioLogin'
 import ChangePinPage from './pages/ChangePinPage'
 import ClientSettings from './pages/ClientSettings'
 import FinancePanel from './pages/FinancePanel'
+import Layout from './components/Layout'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -68,7 +69,9 @@ function App() {
                 path="/"
                 element={
                   <PrivateRoute>
-                    <AdminPanel />
+                    <Layout>
+                      <AdminPanel />
+                    </Layout>
                   </PrivateRoute>
                 }
               />
@@ -76,7 +79,9 @@ function App() {
                 path="/super-admin"
                 element={
                   <PrivateRoute>
-                    <SuperAdmin />
+                    <Layout>
+                      <SuperAdmin />
+                    </Layout>
                   </PrivateRoute>
                 }
               />
@@ -84,7 +89,9 @@ function App() {
                 path="/configuracoes"
                 element={
                   <PrivateRoute>
-                    <ClientSettings />
+                    <Layout>
+                      <ClientSettings />
+                    </Layout>
                   </PrivateRoute>
                 }
               />
@@ -92,7 +99,9 @@ function App() {
                 path="/financeiro"
                 element={
                   <PrivateRoute>
-                    <FinancePanel />
+                    <Layout>
+                      <FinancePanel />
+                    </Layout>
                   </PrivateRoute>
                 }
               />
