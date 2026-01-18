@@ -39,6 +39,25 @@ const ClientSettings = () => {
             if (data) {
                 setSettings(data)
                 setLogoPreview(data.logo_url || '')
+            } else {
+                // Se não existe, criar registro padrão
+                const defaultSettings = {
+                    user_id: user.id,
+                    slogan: '',
+                    logo_url: null,
+                    primary_color: '#3f197f',
+                    secondary_color: '#ffffff'
+                }
+
+                const { data: newData, error: insertError } = await supabase
+                    .from('radio_settings')
+                    .insert(defaultSettings)
+                    .select()
+                    .single()
+
+                if (!insertError && newData) {
+                    setSettings(newData)
+                }
             }
         } catch (err) {
             console.error('Erro ao carregar configurações:', err)
