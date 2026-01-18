@@ -90,8 +90,7 @@ const SuperAdmin = () => {
                 .update({
                     status: status,
                     expires_at: expiresAt,
-                    plan_type: planType,
-                    updated_at: new Date().toISOString()
+                    plan_type: planType
                 })
                 .eq('user_id', userId)
 
