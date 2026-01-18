@@ -207,11 +207,11 @@ const SuperAdmin = () => {
                                                 {/* Link de Acesso */}
                                                 <div className="flex items-center gap-2">
                                                     <code className="text-xs bg-gray-800 px-2 py-1 rounded text-purple-400">
-                                                        {window.location.origin}/#/radio/{client.slug}
+                                                        {window.location.origin}/sorteio-facil-web/#/radio/{client.slug}
                                                     </code>
                                                     <button
                                                         onClick={() => {
-                                                            const link = `${window.location.origin}/#/radio/${client.slug}`
+                                                            const link = `${window.location.origin}/sorteio-facil-web/#/radio/${client.slug}`
                                                             navigator.clipboard.writeText(link)
                                                             alert('Link copiado!')
                                                         }}
