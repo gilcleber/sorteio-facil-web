@@ -69,6 +69,9 @@ const SuperAdmin = () => {
     }
 
     const updateName = async (userId, newName) => {
+        // Atualização otimista
+        setClients(prev => prev.map(c => c.id === userId ? { ...c, nome: newName } : c))
+
         try {
             const { error } = await supabase
                 .from('profiles')
@@ -76,11 +79,10 @@ const SuperAdmin = () => {
                 .eq('id', userId)
 
             if (error) throw error
-
-            await fetchClients()
-            alert('Nome atualizado!')
+            // Sucesso silencioso ou toast
         } catch (error) {
             alert('Erro ao atualizar nome: ' + error.message)
+            fetchClients() // Reverte em caso de erro
         }
     }
 
@@ -90,39 +92,49 @@ const SuperAdmin = () => {
             let expiresAt = null
             let finalPlanType = planType
 
-            // Se uma data foi fornecida, SEMPRE muda para pro_mensal (não vitalício)
+            // Se uma data foi fornecida
             if (customDate) {
                 const d = new Date(customDate)
-                d.setHours(23, 59, 59, 999)
+                d.setHours(23, 59, 59, 999) // Fim do dia
                 expiresAt = d.toISOString()
-                finalPlanType = 'pro_mensal' // Força mudança de vitalício para mensal
+                finalPlanType = 'pro_mensal'
             } else if (planType === 'pro_vitalicio') {
-                expiresAt = null // Vitalício não expira
+                expiresAt = null // Vitalício
                 finalPlanType = 'pro_vitalicio'
-            } else {
-                // Fallback (caso precise)
-                const d = new Date()
-                d.setDate(d.getDate() + 30)
-                expiresAt = d.toISOString()
-                finalPlanType = finalPlanType || 'pro_mensal'
+            } else if (status === 'blocked' || status === 'active') {
+                // Mudança apenas de status, manter a data atual ou null se vitalício
+                // Precisamos buscar a licença atual para não perder a data? 
+                // Ou confiamos no que temos no front? Vamos confiar no front.
+                const currentClient = clients.find(c => c.id === userId)
+                expiresAt = currentClient.expires_at // Mantém a data atual
+                finalPlanType = currentClient.plan_type
             }
 
+            // Atualização Otimista
+            setClients(prev => prev.map(c => c.id === userId ? {
+                ...c,
+                status,
+                expires_at: expiresAt,
+                plan_type: finalPlanType
+            } : c))
+
+            // Upsert na licença (Garante que exista)
             const { error } = await supabase
                 .from('licenses')
-                .update({
+                .upsert({
+                    user_id: userId,
                     status: status,
                     expires_at: expiresAt,
                     plan_type: finalPlanType
-                })
-                .eq('user_id', userId)
+                }, { onConflict: 'user_id' })
 
             if (error) throw error
 
-            await fetchClients()
             alert(`Licença atualizada!`)
 
         } catch (error) {
             alert("Erro ao atualizar: " + error.message)
+            fetchClients() // Reverte
         } finally {
             setProcessing(null)
         }
