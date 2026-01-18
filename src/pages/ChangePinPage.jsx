@@ -130,6 +130,20 @@ const ChangePinPage = () => {
                     <div className={`w-2 h-2 rounded-full ${step === 2 ? 'bg-purple-500' : 'bg-gray-700'}`} />
                 </div>
 
+                {/* Botão Voltar (apenas step 2) */}
+                {step === 2 && (
+                    <button
+                        onClick={() => {
+                            setStep(1)
+                            setConfirmPin('')
+                            setError('')
+                        }}
+                        className="w-full mb-4 text-gray-400 text-sm hover:text-white"
+                    >
+                        ← Voltar e corrigir PIN
+                    </button>
+                )}
+
                 {/* Mensagem de Erro */}
                 {error && (
                     <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-3 mb-4 flex items-center gap-2">

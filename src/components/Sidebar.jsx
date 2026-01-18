@@ -28,53 +28,25 @@ const Sidebar = () => {
 
             if (data?.slug) {
                 setUserSlug(data.slug)
+                localStorage.setItem('radioSlug', data.slug) // Salva para uso futuro
             }
         } catch (err) {
             console.error('Erro ao buscar slug:', err)
         }
     }
 
-    const menuItems = [
-        {
-            name: 'Sorteios',
-            icon: Home,
-            path: '/',
-            show: true
-        },
-        {
-            name: 'Configurações',
-            icon: Settings,
-            path: '/configuracoes',
-            show: true
-        },
-        {
-            name: 'Financeiro',
-            icon: DollarSign,
-            path: '/financeiro',
-            show: user?.isAdmin
-        },
-        {
-            name: 'Super Admin',
-            icon: Shield,
-            path: '/super-admin',
-            show: user?.isAdmin
-        }
-    ]
+    // ... menuItems code ...
 
     const handleLogout = async () => {
         try {
-            // Buscar slug do usuário antes de fazer logout
-            const { data } = await supabase
-                .from('profiles')
-                .select('slug')
-                .eq('id', user.id)
-                .single()
+            // Tenta pegar do state ou localStorage
+            const slugToRedirect = userSlug || localStorage.getItem('radioSlug')
 
             await signOut()
 
             // Redirecionar para login via PIN se tiver slug, senão para login normal
-            if (data?.slug) {
-                navigate(`/radio/${data.slug}`)
+            if (slugToRedirect) {
+                window.location.href = `#/radio/${slugToRedirect}` // Força redirect via window
             } else {
                 navigate('/login')
             }
