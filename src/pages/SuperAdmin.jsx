@@ -214,11 +214,32 @@ const SuperAdmin = () => {
                                         </div>
                                         <p className="text-gray-400 text-sm">{client.email}</p>
                                         <p className="text-gray-500 text-xs mt-1 flex items-center gap-1"><Users className="w-3 h-3" /> {client.telefone}</p>
+
+                                        {/* Edição de Slug */}
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">Slug:</span>
+                                            <input
+                                                type="text"
+                                                defaultValue={client.slug || ''}
+                                                onBlur={(e) => {
+                                                    const newSlug = e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
+                                                    if (newSlug !== client.slug && newSlug) {
+                                                        updateSlug(client.id, newSlug)
+                                                    }
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') e.target.blur()
+                                                }}
+                                                placeholder="ex: radio-fm"
+                                                className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-purple-400 focus:border-purple-500 outline-none w-40"
+                                            />
+                                        </div>
+
                                         {client.slug && (
                                             <div className="mt-2 space-y-2">
                                                 {/* Link de Acesso */}
                                                 <div className="flex items-center gap-2">
-                                                    <code className="text-xs bg-gray-800 px-2 py-1 rounded text-purple-400">
+                                                    <code className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400 select-all">
                                                         {window.location.origin}/sorteio-facil-web/#/radio/{client.slug}
                                                     </code>
                                                     <button
@@ -236,7 +257,7 @@ const SuperAdmin = () => {
                                                 {/* PIN de Acesso */}
                                                 {client.pin && (
                                                     <div className="flex items-center gap-2">
-                                                        <code className="text-xs bg-yellow-900/20 border border-yellow-600/50 px-2 py-1 rounded text-yellow-400 font-mono">
+                                                        <code className="text-xs bg-yellow-900/20 border border-yellow-600/50 px-2 py-1 rounded text-yellow-400 font-mono select-all">
                                                             PIN: {client.pin}
                                                         </code>
                                                         <button
