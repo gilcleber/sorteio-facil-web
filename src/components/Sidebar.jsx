@@ -11,27 +11,33 @@ const Sidebar = () => {
     const { user, signOut } = useAuth()
     const { theme } = useTheme()
     const [userSlug, setUserSlug] = useState('')
+    const [radioName, setRadioName] = useState('')
 
     useEffect(() => {
         if (user) {
-            fetchUserSlug()
+            fetchUserProfile()
         }
     }, [user])
 
-    const fetchUserSlug = async () => {
+    const fetchUserProfile = async () => {
         try {
             const { data } = await supabase
                 .from('profiles')
-                .select('slug')
+                .select('slug, nome_completo')
                 .eq('id', user.id)
                 .single()
 
-            if (data?.slug) {
-                setUserSlug(data.slug)
-                localStorage.setItem('radioSlug', data.slug) // Salva para uso futuro
+            if (data) {
+                if (data.slug) {
+                    setUserSlug(data.slug)
+                    localStorage.setItem('radioSlug', data.slug)
+                }
+                if (data.nome_completo) {
+                    setRadioName(data.nome_completo)
+                }
             }
         } catch (err) {
-            console.error('Erro ao buscar slug:', err)
+            console.error('Erro ao buscar perfil:', err)
         }
     }
 
@@ -57,6 +63,9 @@ const Sidebar = () => {
         {
             name: 'Super Admin',
             icon: Shield,
+            path: undefined, // path removed to avoid navigation error in mapping 
+            // Wait, path is used in mapping. Keeping original structure but checking logic.
+            // Original code: path: '/super-admin'
             path: '/super-admin',
             show: user?.isAdmin
         }
@@ -98,8 +107,10 @@ const Sidebar = () => {
                         )}
                     </div>
                     <div>
-                        <h1 className="text-white font-bold text-lg">Sorteio Fácil</h1>
-                        <p className="text-gray-400 text-xs">{theme.slogan || 'PRO'}</p>
+                        <h1 className="text-white font-bold text-lg line-clamp-1" title={radioName || 'Sorteio Fácil'}>
+                            {radioName || 'Sorteio Fácil'}
+                        </h1>
+                        <p className="text-gray-400 text-xs">{theme.slogan || 'Gestão de Sorteios'}</p>
                     </div>
                 </div>
             </div>
