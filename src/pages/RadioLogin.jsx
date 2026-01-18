@@ -15,7 +15,12 @@ const RadioLogin = () => {
     const [loadingRadio, setLoadingRadio] = useState(true)
 
     useEffect(() => {
-        fetchRadioData()
+        const cleanupSession = async () => {
+            // Força logout para evitar conflito de sessão (ex: Admin logado tentando acessar rádio)
+            await supabase.auth.signOut()
+            fetchRadioData()
+        }
+        cleanupSession()
     }, [slug])
 
     const fetchRadioData = async () => {

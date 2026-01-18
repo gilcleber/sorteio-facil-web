@@ -180,6 +180,54 @@ const SuperAdmin = () => {
     )
 
     return (
+    const [showCreateModal, setShowCreateModal] = useState(false)
+    const [newRadio, setNewRadio] = useState({ email: '', nome: '', slug: '', password: '' })
+    const [creating, setCreating] = useState(false)
+
+    // Função para gerar senha/pin aleatório de 4 números
+    const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString()
+
+    const openCreateModal = () => {
+        setNewRadio({ email: '', nome: '', slug: '', password: generatePin() })
+        setShowCreateModal(true)
+    }
+
+    const handleCreateRadio = async (e) => {
+        e.preventDefault()
+        if (!newRadio.email || !newRadio.nome || !newRadio.slug) return alert("Preencha todos os campos")
+
+        setCreating(true)
+        try {
+            // Chama a função RPC criada via SQL
+            const { data, error } = await supabase.rpc('create_radio_account', {
+                email: newRadio.email,
+                password: newRadio.password, // Usa o PIN como senha inicial
+                name: newRadio.nome,
+                user_slug: newRadio.slug
+            })
+
+            if (error) throw error
+
+            alert(`Rádio ${newRadio.nome} criada com sucesso!\nPIN Inicial: ${newRadio.password}`)
+            setShowCreateModal(false)
+            fetchClients() // Recarrega lista
+
+        } catch (error) {
+            console.error("Erro ao criar rádio:", error)
+            alert("Erro ao criar: " + error.message)
+        } finally {
+            setCreating(false)
+        }
+    }
+
+    // Gerador de slug automático ao digitar nome
+    const handleNameChange = (e) => {
+        const val = e.target.value
+        const slugAuto = val.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+        setNewRadio(prev => ({ ...prev, nome: val, slug: slugAuto }))
+    }
+
+    return (
         <div className="min-h-screen bg-gray-950 text-white p-6 font-sans">
             <div className="max-w-7xl mx-auto">
                 <header className="flex justify-between items-center mb-10 bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl">
@@ -193,6 +241,9 @@ const SuperAdmin = () => {
                         </div>
                     </div>
                     <div className="flex gap-4">
+                        <button onClick={openCreateModal} className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-purple-900/20">
+                            <Users className="w-5 h-5" /> Nova Rádio
+                        </button>
                         <div className="relative">
                             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
                             <input
@@ -208,6 +259,48 @@ const SuperAdmin = () => {
                         </button>
                     </div>
                 </header>
+
+                {/* MODAL CRIAR RÁDIO */}
+                {showCreateModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="bg-gray-900 border border-gray-700 p-8 rounded-2xl w-full max-w-md shadow-2xl relative">
+                            <button onClick={() => setShowCreateModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><XCircle /></button>
+                            <h2 className="text-2xl font-bold text-white mb-6">Cadastrar Nova Rádio</h2>
+
+                            <form onSubmit={handleCreateRadio} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs uppercase text-gray-500 font-bold mb-1">Nome da Rádio</label>
+                                    <input autoFocus type="text" value={newRadio.nome} onChange={handleNameChange} className="w-full bg-gray-800 border-gray-700 rounded p-3 text-white focus:border-purple-500 outline-none" placeholder="Ex: Rádio Top FM" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs uppercase text-gray-500 font-bold mb-1">Slug (Link)</label>
+                                    <div className="flex items-center bg-gray-800 border border-gray-700 rounded px-3">
+                                        <span className="text-gray-500 text-sm">/radio/</span>
+                                        <input type="text" value={newRadio.slug} onChange={e => setNewRadio({ ...newRadio, slug: e.target.value })} className="w-full bg-transparent p-3 text-white focus:outline-none" placeholder="radio-top" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs uppercase text-gray-500 font-bold mb-1">Email de Login</label>
+                                    <input type="email" value={newRadio.email} onChange={e => setNewRadio({ ...newRadio, email: e.target.value })} className="w-full bg-gray-800 border-gray-700 rounded p-3 text-white focus:border-purple-500 outline-none" placeholder="contato@radio.com" />
+                                </div>
+
+                                <div className="bg-yellow-900/20 p-4 rounded border border-yellow-600/30 flex justify-between items-center">
+                                    <div>
+                                        <p className="text-xs text-yellow-500 font-bold uppercase">PIN Inicial (Senha)</p>
+                                        <p className="text-2xl font-mono text-white tracking-widest">{newRadio.password}</p>
+                                    </div>
+                                    <button type="button" onClick={() => setNewRadio(prev => ({ ...prev, password: generatePin() }))} className="text-xs text-yellow-400 hover:underline">Gerar Outro</button>
+                                </div>
+
+                                <button disabled={creating} type="submit" className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded-xl font-bold text-white shadow-lg mt-4 flex justify-center">
+                                    {creating ? <Loader2 className="animate-spin" /> : "Criar Rádio"}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="text-center py-20 text-gray-500 flex flex-col items-center">
