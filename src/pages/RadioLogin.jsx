@@ -122,9 +122,16 @@ const RadioLogin = () => {
                 return
             }
 
-            // Se PIN não foi alterado, redireciona para modal de troca
+            // Se PIN não foi alterado, redireciona para modal de troca com dados da rádio
             if (!profile.pin_changed) {
-                navigate('/trocar-pin', { state: { userId: profile.id, firstLogin: true } })
+                navigate('/trocar-pin', {
+                    state: {
+                        userId: profile.id,
+                        firstLogin: true,
+                        radioName: radioData?.nome_completo, // Mantém o nome
+                        radioSlug: slug // Mantém o slug para redirection se precisar
+                    }
+                })
             } else {
                 navigate('/')
             }
