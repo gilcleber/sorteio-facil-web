@@ -39,7 +39,17 @@ const ChangePinPage = () => {
         setError('')
 
         try {
-            // Atualiza o PIN no banco
+            // 1. Atualiza a senha no Supabase Auth (Fundamental para login funcionar)
+            const { error: authError } = await supabase.auth.updateUser({
+                password: newPin
+            })
+
+            if (authError) {
+                console.error('Erro ao atualizar senha auth:', authError)
+                throw new Error('Falha ao atualizar credenciais de login.')
+            }
+
+            // 2. Atualiza o PIN e status no banco de dados
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({
@@ -59,7 +69,7 @@ const ChangePinPage = () => {
 
         } catch (err) {
             console.error('Erro ao atualizar PIN:', err)
-            setError('Erro ao salvar novo PIN. Tente novamente.')
+            setError(err.message || 'Erro ao salvar novo PIN. Tente novamente.')
             setStep(1)
             setNewPin('')
             setConfirmPin('')
