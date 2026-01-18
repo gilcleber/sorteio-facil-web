@@ -50,24 +50,44 @@ const RadioLogin = () => {
         setError('')
 
         try {
-            // Busca usuário pelo slug e PIN
+            console.log('Tentando login com slug:', slug, 'PIN:', pin)
+
+            // 1. Busca perfil pelo slug e PIN
             const { data: profile, error: profileError } = await supabase
                 .from('profiles')
-                .select('*, licenses(*)')
+                .select('*')
                 .eq('slug', slug)
                 .eq('pin', pin)
                 .single()
 
             if (profileError || !profile) {
+                console.error('Perfil não encontrado ou PIN incorreto:', profileError)
                 setError('PIN incorreto. Tente novamente.')
                 setLoading(false)
                 return
             }
 
-            // Verifica se a licença está ativa
-            const license = profile.licenses?.[0]
+            console.log('Perfil encontrado:', profile)
+
+            // 2. Busca licença explicitamente (mais seguro que join com RLS público)
+            const { data: license, error: licenseError } = await supabase
+                .from('licenses')
+                .select('*')
+                .eq('user_id', profile.id)
+                .maybeSingle() // Usa maybeSingle para não dar erro se não existir
+
+            console.log('Licença encontrada:', license, 'Erro:', licenseError)
+
+            if (licenseError) {
+                console.error('Erro ao buscar licença:', licenseError)
+                setError('Erro ao verificar licença. Tente novamente.')
+                setLoading(false)
+                return
+            }
+
             if (!license || license.status !== 'active') {
-                setError('Acesso bloqueado. Entre em contato com o administrador.')
+                console.warn('Licença inválida ou inativa:', license)
+                setError('Acesso bloqueado. Licença inativa. Contate o suporte.')
                 setLoading(false)
                 return
             }
@@ -83,16 +103,21 @@ const RadioLogin = () => {
                 }
             }
 
-            // Login via Supabase Auth usando o email
+            // 3. Login via Supabase Auth
+            // IMPORTANTE: A senha do usuário DEVE ser igual ao PIN
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email: profile.email,
-                password: pin // Usando PIN como senha temporária
+                password: pin
             })
 
             if (authError) {
-                // Se falhar, tenta criar sessão manualmente (workaround)
-                console.error('Erro de autenticação:', authError)
-                setError('Erro ao fazer login. Tente novamente.')
+                console.error('Erro de autenticação (Auth):', authError)
+                // Se der erro de senha inválida, significa que a senha no Auth != PIN no banco
+                if (authError.message.includes('Invalid login credentials')) {
+                    setError('Erro de credenciais. A senha do sistema pode estar diferente do PIN.')
+                } else {
+                    setError(`Erro ao logar: ${authError.message}`)
+                }
                 setLoading(false)
                 return
             }
@@ -105,7 +130,7 @@ const RadioLogin = () => {
             }
 
         } catch (err) {
-            console.error('Erro no login:', err)
+            console.error('Erro inesperado no login:', err)
             setError('Erro inesperado. Tente novamente.')
         } finally {
             setLoading(false)
