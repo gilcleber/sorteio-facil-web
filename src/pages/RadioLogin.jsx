@@ -50,15 +50,25 @@ const RadioLogin = () => {
     const fetchRadioData = async () => {
         setLoadingRadio(true)
         try {
-            const { data, error } = await supabase
+            let { data, error } = await supabase
                 .from('profiles')
                 .select('id, nome_completo, slug, email')
                 .eq('slug', slug)
                 .single()
 
             if (error || !data) {
-                setError('Rádio não encontrada. Verifique o link.')
-                return
+                // Fallback para slugs antigos que foram salvos com "radio/"
+                const { data: fallbackData, error: fallbackError } = await supabase
+                    .from('profiles')
+                    .select('id, nome_completo, slug, email')
+                    .eq('slug', `radio/${slug}`)
+                    .single()
+                
+                if (fallbackError || !fallbackData) {
+                    setError('Rádio não encontrada. Verifique o link.')
+                    return
+                }
+                data = fallbackData
             }
 
             setRadioData(data)
