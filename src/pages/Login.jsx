@@ -38,8 +38,8 @@ const Login = () => {
     const handleRadioAccess = (e) => {
         e.preventDefault()
         if (!radioSlug) return
-        // Redireciona para a rota de login da rádio
-        window.location.href = `#/radio/${radioSlug.toLowerCase().trim()}`
+        // Redireciona para a rota de login da empresa/rádio
+        window.location.href = `#/${radioSlug.toLowerCase().trim()}/admin`
     }
 
     return (
@@ -124,12 +124,11 @@ const Login = () => {
                             <label className="block text-sm font-bold text-gray-300 mb-3 text-center">Digite o nome do seu link</label>
                             <form onSubmit={handleRadioAccess} className="flex flex-col gap-3">
                                 <div className="relative">
-                                    <span className="absolute left-3 top-3.5 text-gray-500 text-sm font-mono">/radio/</span>
                                     <input
                                         type="text"
                                         value={radioSlug}
                                         onChange={e => setRadioSlug(e.target.value)}
-                                        className="w-full bg-black/50 border border-gray-600 rounded-xl pl-16 pr-4 py-3 text-white focus:border-purple-500 outline-none font-mono tracking-wide"
+                                        className="w-full bg-black/50 border border-gray-600 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none font-mono tracking-wide"
                                         placeholder="rbcampinas"
                                         required
                                     />

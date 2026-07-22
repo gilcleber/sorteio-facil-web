@@ -109,7 +109,7 @@ const Sidebar = () => {
 
             // Redirecionar para login via PIN se tiver slug, senão para login normal
             if (slugToRedirect) {
-                window.location.href = `#/radio/${slugToRedirect}` // Força redirect via window
+                window.location.href = `#/${slugToRedirect}/admin` // Força redirect via window
             } else {
                 navigate('/login')
             }
