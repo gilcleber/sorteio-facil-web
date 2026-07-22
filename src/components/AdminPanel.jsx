@@ -3,6 +3,7 @@ import Importador from './Importador'
 import SorteioConfig from './SorteioConfig'
 import FormularioConfig from './FormularioConfig'
 import RelatorioPanel from './RelatorioPanel'
+import DashboardMetrics from './DashboardMetrics'
 import { Settings, Play, RefreshCw, Trophy, Clock, Zap, Upload, Users, List, MonitorPlay, Check, X, Volume2, Ban, Gauge, Shuffle, Gift, Trash2, AlertCircle, VolumeX, FilePlus, Cloud, RadioReceiver, PenTool, LogOut, Copy } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
@@ -288,8 +289,8 @@ const AdminPanel = ({ initialView = 'sorteio' }) => {
 
     return (
         <div className="min-h-screen bg-gray-950 text-white p-4 md:p-6 font-sans flex flex-col gap-4">
-            {/* NOVO TOPBAR SIMPLIFICADO (CTO REQUEST) */}
-            <header className="flex flex-col md:flex-row justify-between items-center bg-gray-900/80 backdrop-blur p-4 rounded-xl border border-gray-800 shadow-lg sticky top-0 z-40">
+            {/* NOVO TOPBAR SIMPLIFICADO */}
+            <header className="flex flex-col md:flex-row justify-between items-center bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-md sticky top-0 z-40">
                 <div className="flex items-center gap-4">
                     <div className="bg-purple-600/20 p-2 rounded-lg"><Cloud className="w-6 h-6 text-purple-400" /></div>
                     <div>
@@ -323,8 +324,12 @@ const AdminPanel = ({ initialView = 'sorteio' }) => {
             {/* VIEWS */}
             {viewMode === 'config' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto w-full"><SorteioConfig user={user} /></div>}
             {viewMode === 'forms' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto w-full"><FormularioConfig user={user} /></div>}
-            {viewMode === 'relatorios' && <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto w-full"><RelatorioPanel participantes={participantes} eventoAtivoId={eventoAtivoId} tituloEvento="Relatório Geral" brinde={brindeAtual} /></div>}
-
+            {viewMode === 'relatorios' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto w-full space-y-6">
+                    <DashboardMetrics participantes={participantes} historico={historico} />
+                    <RelatorioPanel participantes={participantes} eventoAtivoId={eventoAtivoId} tituloEvento="Relatório Geral" brinde={brindeAtual} />
+                </div>
+            )}
 
             {/* CONTEÚDO PRINCIPAL */}
             {viewMode === 'sorteio' && (
@@ -334,7 +339,7 @@ const AdminPanel = ({ initialView = 'sorteio' }) => {
                 <div className="lg:col-span-8 flex flex-col gap-6">
 
                     {/* ÁREA DE SORTEIO */}
-                    <div className="bg-gray-900 rounded-3xl border border-gray-800 shadow-2xl overflow-hidden relative min-h-[400px] flex flex-col justify-center items-center p-8">
+                    <div className="bg-gray-900 rounded-2xl border border-gray-800 shadow-lg overflow-hidden relative min-h-[400px] flex flex-col justify-center items-center p-8">
 
                         {/* Seletor Rápido de Brinde (MOVIDO DO TOPO PARA DENTRO DO FLUXO, MAIS DISCRETO) */}
                         {!ganhador && !isSorteando && (
@@ -423,7 +428,7 @@ const AdminPanel = ({ initialView = 'sorteio' }) => {
                     {/* GRADE DE CONTROLES */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* 1. TEMPO */}
-                        <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800 flex flex-col justify-center">
+                        <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-sm flex flex-col justify-center">
                             <div className="flex justify-between mb-2">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1"><Clock className="w-3 h-3" /> Tempo (s)</label>
                                 <span className="text-xs font-mono text-purple-400">{duracao}s</span>
@@ -432,7 +437,7 @@ const AdminPanel = ({ initialView = 'sorteio' }) => {
                         </div>
 
                         {/* 2. VELOCIDADE */}
-                        <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-800 flex flex-col justify-center">
+                        <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-sm flex flex-col justify-center">
                             <div className="flex justify-between mb-2">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1"><Gauge className="w-3 h-3" /> Velocidade</label>
                                 <span className="text-xs font-mono text-purple-400">{velocidade}ms</span>
@@ -478,16 +483,15 @@ const AdminPanel = ({ initialView = 'sorteio' }) => {
                 </div>
 
                 {/* COLUNA DIREITA: ABAS E LISTAS (4 colunas) */}
-                <div className="lg:col-span-4 flex flex-col h-[700px] bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
-                    {/* Navegação de Abas */}
-                    <div className="flex border-b border-gray-800">
-                        <button onClick={() => setAbaAtiva('historico')} className={`flex-1 py-3 text-xs font-bold uppercase ${abaAtiva === 'historico' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-gray-300'}`}>Ganhadores</button>
-                        <button onClick={() => setAbaAtiva('brindes')} className={`flex-1 py-3 text-xs font-bold uppercase ${abaAtiva === 'brindes' ? 'bg-gray-800 text-purple-400 border-b-2 border-purple-400' : 'text-gray-500 hover:text-gray-300'}`}>Brindes</button>
-                        <button onClick={() => setAbaAtiva('participantes')} className={`flex-1 py-3 text-xs font-bold uppercase ${abaAtiva === 'participantes' ? 'bg-gray-800 text-blue-400 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'}`}>LISTA</button>
-                    </div>
-
-                    <div className="flex-1 overflow-auto p-4 custom-scrollbar bg-black/20">
-
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                    <div className="bg-gray-900 rounded-2xl border border-gray-800 shadow-lg overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                        {/* Navegação de Abas */}
+                        <div className="flex border-b border-gray-800 bg-gray-950">
+                            <button onClick={() => setAbaAtiva('historico')} className={`flex-1 py-4 text-xs font-bold tracking-wide uppercase transition-all ${abaAtiva === 'historico' ? 'text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}>Ganhadores</button>
+                            <button onClick={() => setAbaAtiva('brindes')} className={`flex-1 py-4 text-xs font-bold tracking-wide uppercase transition-all ${abaAtiva === 'brindes' ? 'text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}>Brindes</button>
+                            <button onClick={() => setAbaAtiva('participantes')} className={`flex-1 py-4 text-xs font-bold tracking-wide uppercase transition-all ${abaAtiva === 'participantes' ? 'text-white border-b-2 border-white' : 'text-gray-500 hover:text-gray-300'}`}>LISTA</button>
+                        </div>
+                        <div className="flex-1 overflow-auto p-6 custom-scrollbar bg-gray-900">
                         {/* ABA Lista Completa (Participantes) */}
                         {abaAtiva === 'participantes' && (
                             <div className="space-y-2">
@@ -560,6 +564,7 @@ const AdminPanel = ({ initialView = 'sorteio' }) => {
                         )}
                     </div>
                 </div>
+            </div>
             </div>
             )}
 

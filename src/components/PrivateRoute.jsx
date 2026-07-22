@@ -24,7 +24,8 @@ const PrivateRoute = ({ children, requiredRole }) => {
     }
 
     // Opcional: Bloqueio estrito de licença
-    // Se quiser permitir acesso 'read-only' ou limitado, removeríamos esse bloco
+    // Temporariamente DESATIVADO a pedido do Master para facilitar testes
+    /*
     if (license && license.status === 'blocked') {
         return (
             <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-white p-6 text-center">
@@ -43,6 +44,7 @@ const PrivateRoute = ({ children, requiredRole }) => {
             </div>
         )
     }
+    */
 
     return children
 }

@@ -124,9 +124,9 @@ const PublicDisplay = () => {
     }
 
     return (
-        <div className="w-screen h-screen bg-black flex flex-col items-center justify-center overflow-hidden relative font-sans">
-            {/* Background Dinâmico */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-black to-black" />
+        <div className="w-screen h-screen bg-gray-950 flex flex-col items-center justify-center overflow-hidden relative font-sans">
+            {/* Background Minimalista Premium */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-950 to-gray-900 opacity-90" />
 
             {/* BARRA SUPERIOR (Metadata Master) */}
             <div className="absolute top-0 left-0 w-full flex justify-between items-start p-6 md:p-10 z-30">
@@ -184,24 +184,24 @@ const PublicDisplay = () => {
                     className="relative z-10 text-center w-full max-w-7xl flex flex-col items-center"
                 >
                     {ganhador ? (
-                        <div className="space-y-8 animate-in fade-in zoom-in slide-in-from-bottom-24 duration-700 flex flex-col items-center w-full">
-                            <div className="mb-6 flex flex-col items-center gap-2">
-                                <span className="bg-gradient-to-r from-yellow-300 to-yellow-500 text-black px-8 py-2 rounded-full text-xl font-black uppercase tracking-[0.3em] shadow-[0_0_80px_rgba(234,179,8,0.6)] animate-bounce">
-                                    Ganhador(a) Oficial
+                        <div className="space-y-8 animate-in fade-in zoom-in slide-in-from-bottom-24 duration-700 flex flex-col items-center w-full relative">
+                            <div className="absolute inset-0 bg-yellow-500/5 blur-[100px] rounded-full w-full h-full -z-10 animate-pulse"></div>
+                            
+                            <div className="mb-6 flex flex-col items-center gap-4">
+                                <motion.div animate={{ rotate: [0, 2, -2, 0] }} transition={{ repeat: Infinity, duration: 3 }}>
+                                    <Trophy className="w-32 h-32 text-yellow-500 drop-shadow-md" />
+                                </motion.div>
+                                <span className="bg-yellow-500 text-black px-8 py-2 rounded-full text-xl font-black uppercase tracking-widest shadow-lg">
+                                    Vencedor(a) Oficial
                                 </span>
-                                {premioAtual && (
-                                    <span className="text-yellow-200/90 uppercase font-black text-sm tracking-widest mt-4">
-                                        Levou: {premioAtual}
-                                    </span>
-                                )}
                             </div>
 
-                            <div className="w-full flex justify-center items-center px-2" style={{ height: '30vh' }}>
+                            <div className="w-full flex justify-center items-center px-2">
                                 <h1
-                                    className="font-black text-white neon-text leading-none text-center transition-all duration-300 drop-shadow-2xl"
+                                    className="font-black text-white leading-none text-center"
                                     style={{
                                         whiteSpace: 'nowrap',
-                                        fontSize: `clamp(2rem, ${150 / Math.max(ganhador.nome.length, 10)}vw, 12rem)`,
+                                        fontSize: `clamp(3rem, ${100 / Math.max(ganhador.nome.length, 10)}vw, 7rem)`,
                                         width: '100%',
                                     }}
                                 >
@@ -209,29 +209,43 @@ const PublicDisplay = () => {
                                 </h1>
                             </div>
 
-                            <div className="flex flex-col gap-4 items-center justify-center text-4xl font-mono text-gray-300 mt-8">
-                                <p className="text-green-400 font-bold tracking-widest text-[5vw] md:text-5xl bg-green-900/20 px-8 py-3 rounded-2xl border border-green-500/30">
+                            <div className="flex flex-col gap-4 items-center justify-center mt-6">
+                                <p className="text-gray-400 font-bold tracking-widest text-4xl bg-gray-900 border border-gray-800 px-10 py-4 rounded-full shadow-md">
                                     {mascararTelefone(ganhador.telefone)}
                                 </p>
                             </div>
                         </div>
                     ) : (
                         // MODO PRE-GAME (IDLE E ROLLING)
-                        <div className={`w-full flex justify-center items-center px-2 flex-col gap-8 h-[50vh]`}>
+                        <div className={`w-full flex justify-center items-center px-2 flex-col gap-6 h-[50vh] relative`}>
+                             {isSorteando && <div className="absolute inset-0 bg-gray-800/20 blur-[100px] rounded-full w-full h-full -z-10 animate-pulse"></div>}
+                             
                              {isSorteando && (
-                                 <motion.div initial={{opacity:0}} animate={{opacity:1}} className="bg-yellow-500 text-black px-6 py-1 rounded-full font-black tracking-[0.4em] uppercase text-sm animate-pulse">Sorteando</motion.div>
+                                 <motion.div initial={{opacity:0}} animate={{opacity:1}} className="bg-gray-800 border border-gray-700 text-gray-300 px-6 py-2 rounded-full font-bold tracking-widest uppercase text-sm animate-pulse">Sorteando...</motion.div>
                              )}
                              
-                            <h1
-                                className={`font-black tracking-tighter transition-all duration-75 ${isSorteando ? 'text-gray-300 opacity-60 blur-[2px]' : 'text-gray-700 opacity-50'}`}
-                                style={{
-                                    whiteSpace: 'nowrap',
-                                    fontSize: `clamp(3rem, ${120 / Math.max(nomeAtual.length, 10)}vw, 8rem)`,
-                                    width: '100%',
-                                }}
-                            >
-                                {nomeAtual}
-                            </h1>
+                             <motion.h1
+                                 animate={isSorteando ? { scale: [1, 1.01, 1] } : {}}
+                                 transition={{ repeat: Infinity, duration: 0.5 }}
+                                 className={`font-black tracking-tight leading-none px-4 text-center transition-colors duration-300 ${
+                                     isSorteando 
+                                         ? 'text-white' 
+                                         : 'text-gray-600 opacity-50'
+                                 }`}
+                                 style={{
+                                     whiteSpace: 'nowrap',
+                                     fontSize: `clamp(3rem, ${100 / Math.max(nomeAtual.length, 10)}vw, 7rem)`,
+                                     width: '100%',
+                                 }}
+                             >
+                                 {nomeAtual}
+                             </motion.h1>
+                             
+                             {!isSorteando && (
+                                 <p className="mt-8 text-2xl text-gray-500 tracking-widest uppercase font-bold">
+                                     Aguardando Sorteio
+                                 </p>
+                             )}
                         </div>
                     )}
                 </motion.div>
@@ -239,5 +253,4 @@ const PublicDisplay = () => {
         </div>
     )
 }
-
 export default PublicDisplay

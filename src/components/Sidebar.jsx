@@ -87,7 +87,7 @@ const Sidebar = () => {
             external: true
         },
         {
-            name: '🧾 Relatórios',
+            name: '📊 Dashboard',
             icon: List,
             path: '/relatorios',
             show: true
